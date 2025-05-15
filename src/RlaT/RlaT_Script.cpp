@@ -1,0 +1,42 @@
+#include "RlaT_Script.h"
+
+#include <iostream>
+#include "RlaT_Data.h"
+#include <any>
+
+using namespace RlaT::internal;
+
+namespace RlaT {
+
+
+void RlaT_Script::ping() {
+    outputString("Its worrrkssss!");
+
+    RlaT_Data var1 = RlaT_Data(RlaT_Data::INTERGER, 15);
+    RlaT_Data var2 = RlaT_Data(RlaT_Data::INTERGER, 10);
+
+    RlaT_Data result = RlaT_Data::evaluate(var1, var2, RlaT_Data::OP_ADD);
+    if(result.getType() == RlaT_Data::ERROR) {
+        outputErrorString(result.toString());
+    }
+
+    outputString(result.toString());
+}
+
+void RlaT_Script::setOutputMethod(std::function<void(std::string)> func) {
+    this->outputFunction = func;
+}
+void RlaT_Script::setOutputErrorMethod(std::function<void(std::string)> func) {
+    this->outputErrorFunction = func;
+}
+
+void RlaT_Script::outputString(std::string output) {
+    this->outputFunction(output);
+}
+void RlaT_Script::outputErrorString(std::string output) {
+    this->outputErrorFunction(output);
+}
+
+
+}
+
