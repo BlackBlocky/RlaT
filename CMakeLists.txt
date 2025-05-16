@@ -9,6 +9,10 @@ set(RlaT_Libary_Sources
     src/RlaT/RlaT_Script.cpp
     src/RlaT/RlaT_Data.h
     src/RlaT/RlaT_Data.cpp
+    src/RlaT/RlaT_ProcessTree.h
+    src/RlaT/RlaT_ProcessTree.cpp
+    src/RlaT/RlaT_ProcessElement.h
+    src/RlaT/RlaT_ProcessElement.cpp
 )
 add_library(rlatLibary STATIC ${RlaT_Libary_Sources})
 

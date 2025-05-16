@@ -3,6 +3,7 @@
 #include <iostream>
 #include "RlaT_Data.h"
 #include <any>
+#include "RlaT_ProcessTree.h"
 
 using namespace RlaT::internal;
 
@@ -12,15 +13,19 @@ namespace RlaT {
 void RlaT_Script::ping() {
     outputString("Its worrrkssss!");
 
-    RlaT_Data var1 = RlaT_Data(RlaT_Data::INTERGER, 15);
-    RlaT_Data var2 = RlaT_Data(RlaT_Data::INTERGER, 10);
+    RlaT_Data var1 = RlaT_Data(DataType::INTEGER, 15);
+    RlaT_Data var2 = RlaT_Data(DataType::INTEGER, 10);
 
-    RlaT_Data result = RlaT_Data::evaluate(var1, var2, RlaT_Data::OP_ADD);
-    if(result.getType() == RlaT_Data::ERROR) {
+    RlaT_Data result = RlaT_Data::evaluate(var1, var2, OperatorType::ADD);
+    if(result.getType() == DataType::ERROR) {
         outputErrorString(result.toString());
     }
 
     outputString(result.toString());
+
+    std::string test[2] = {"print", "Test2"};
+    RlaT_ProcessTree tree = RlaT_ProcessTree(test, 2, this);
+    
 }
 
 void RlaT_Script::setOutputMethod(std::function<void(std::string)> func) {

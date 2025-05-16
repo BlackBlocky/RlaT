@@ -73,6 +73,8 @@
         "xtr1common": "cpp",
         "xutility": "cpp",
         "ranges": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "bitset": "cpp",
+        "regex": "cpp"
     }
 }
