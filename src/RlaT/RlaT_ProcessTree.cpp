@@ -2,6 +2,7 @@
 
 #include "RlaT_ProcessElement.h"
 #include "RlaT_Script.h"
+#include <sstream>
 
 using namespace std;
 using namespace RlaT;
@@ -14,17 +15,26 @@ RlaT_ProcessTree::RlaT_ProcessTree(const std::string* tokens, const size_t token
 
     _mainElement = createElementFromIndex(tokens, 0);
     if(_mainElement->getType() == ProcessElementType::ERROR) {
-        rootScript->outputErrorString("wd");
+        stringstream ss;
+        ss << tokens[0] << " is undefined";
+        rootScript->outputErrorString(ss.str());
+        return;
     }
+
+    stringstream ss;
+    ss << (int)_mainElement->getType();
+    rootScript->outputString(ss.str());
 }
 
 unique_ptr<RlaT_ProcessElement> RlaT_ProcessTree::createElementFromIndex(const std::string* tokens, const int index) {
+    const string& token = tokens[index];
+    
     // check if it is a keyword
-    if(RlaT_ProcessElement::processKeywordToType.count(tokens[index]) == 1) {
+    if(RlaT_ProcessElement::processKeywordToType.count(token) == 1) {
         return make_unique<RlaT_ProcessElement>(RlaT_ProcessElement::processKeywordToType.at(tokens[index]));
     }
     // check if its a string
-    else if(&tokens[index][0] == "\"") {
+    else if(token[0] == '\"') {
         return make_unique<RlaT_ProcessElement>(ProcessElementType::LITERAL);
     }
 

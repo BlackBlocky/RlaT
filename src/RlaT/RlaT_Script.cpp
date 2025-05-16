@@ -3,6 +3,7 @@
 #include <iostream>
 #include "RlaT_Data.h"
 #include <any>
+#include "RlaT_ProcessTree.h"
 
 using namespace RlaT::internal;
 
@@ -21,6 +22,10 @@ void RlaT_Script::ping() {
     }
 
     outputString(result.toString());
+
+    std::string test[2] = {"print", "Test2"};
+    RlaT_ProcessTree tree = RlaT_ProcessTree(test, 2, this);
+    
 }
 
 void RlaT_Script::setOutputMethod(std::function<void(std::string)> func) {

@@ -5,11 +5,12 @@
 #include <vector>
 #include <array>
 
+#include "RlaT_ProcessElement.h"
+
 namespace RlaT {
 class RlaT_Script;
 
 namespace internal {
-class RlaT_ProcessElement;
 
 class RlaT_ProcessTree {
 public:
