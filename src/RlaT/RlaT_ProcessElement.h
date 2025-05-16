@@ -8,11 +8,11 @@ namespace RlaT {
 namespace internal {
 
 enum class ProcessElementType {
-    LITERAL = 0,
-    VARIABLE = 1,
-    OPERATION = 2,
-    PRINT = 3,
-    ERROR = 4
+    LITERAL = 0,   // A basic value like 2 or "text" 
+    VARIABLE = 1,  // Reference to a variable
+    OPERATION = 2, // Contains a operation like + - = etc
+    PRINT = 3,     // Build-In Function => Prints to the Console
+    ERROR = 4      // Error
 };
 
 class RlaT_ProcessElement {

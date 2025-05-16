@@ -13,11 +13,11 @@ namespace RlaT {
 void RlaT_Script::ping() {
     outputString("Its worrrkssss!");
 
-    RlaT_Data var1 = RlaT_Data(RlaT_Data::INTERGER, 15);
-    RlaT_Data var2 = RlaT_Data(RlaT_Data::INTERGER, 10);
+    RlaT_Data var1 = RlaT_Data(DataType::INTEGER, 15);
+    RlaT_Data var2 = RlaT_Data(DataType::INTEGER, 10);
 
-    RlaT_Data result = RlaT_Data::evaluate(var1, var2, RlaT_Data::OP_ADD);
-    if(result.getType() == RlaT_Data::ERROR) {
+    RlaT_Data result = RlaT_Data::evaluate(var1, var2, OperatorType::ADD);
+    if(result.getType() == DataType::ERROR) {
         outputErrorString(result.toString());
     }
 

@@ -6,6 +6,7 @@
 #include <array>
 
 #include "RlaT_ProcessElement.h"
+#include "RlaT_Data.h"
 
 namespace RlaT {
 class RlaT_Script;
@@ -21,8 +22,14 @@ private:
 
     std::unique_ptr<RlaT_ProcessElement> _mainElement;
 
+
     std::unique_ptr<RlaT_ProcessElement> createElementFromIndex(const std::string* tokens, const int index);
     std::vector<RlaT_ProcessElement> getAllElements(const std::string* tokens, const size_t tokenLength, const int depth);
+
+    static DataType isTokenALiteral(std::string token);
+    static bool isTokenADatatype(std::string token);
+    static bool isTokenAFunction(std::string token);
+    static bool isTokenAVariable(std::string token);
 };
 
 } // namespace internal
