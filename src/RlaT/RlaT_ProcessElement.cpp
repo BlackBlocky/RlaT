@@ -2,13 +2,10 @@
 
 namespace RlaT {
 namespace internal {
-    
-const std::map<std::string, ProcessElementType> RlaT_ProcessElement::processKeywordToType = {
-    {"print", ProcessElementType::PRINT}
-};
 
-RlaT_ProcessElement::RlaT_ProcessElement(ProcessElementType type) {
+RlaT_ProcessElement::RlaT_ProcessElement(ProcessElementType type, std::any value) {
     this->_type = type;
+    this->_value = value;
     this->childs = std::vector<RlaT_ProcessElement*>();
 }
 
@@ -27,6 +24,10 @@ const int RlaT_ProcessElement::getChildsSize() {
 const RlaT_ProcessElement& RlaT_ProcessElement::getChild(int index) {
     return *childs.at(index);
 }
+
+const std::any& RlaT_ProcessElement::getValue() {
+    return _value;
+} 
 
 
 } // namespace internal

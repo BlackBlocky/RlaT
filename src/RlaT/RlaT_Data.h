@@ -15,12 +15,25 @@ enum class DataType {
     FUNCTION = 3  // value = bool (unused) (Just for Interpreting purposes, not actually a Datatype)
 };
 enum class OperatorType {
-    SET = 0,
-    ADD = 1,
-    SUB = 2,
-    MUL = 3,
-    DIV = 4
+    NONE = 0,     // used for generting AST, no other purpose
+    SET = 1,
+    ADD = 2,
+    SUB = 3,
+    MUL = 4,
+    DIV = 5
 };
+
+inline std::string toString(OperatorType op) {
+    switch (op) {
+        case OperatorType::NONE: return "NONE";
+        case OperatorType::SET:  return "SET";
+        case OperatorType::ADD:  return "ADD";
+        case OperatorType::SUB:  return "SUB";
+        case OperatorType::MUL:  return "MUL";
+        case OperatorType::DIV:  return "DIV";
+        default:                 return "UNKNOWN";
+    }
+}
 
 class RlaT_Data {
 public:

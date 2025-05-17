@@ -30,7 +30,7 @@ public:
 
 private:
     static const std::string c_functionKeyword;
-    static const std::unordered_map<char, int> c_operatorPriorityMap;
+    static const std::unordered_map<OperatorType, int> c_operatorPriorityMap;
 
     RlaT_Script* rootScript;
 
@@ -41,6 +41,7 @@ private:
     std::vector<RlaT_ProcessElement> getAllElements(const std::string* tokens, const size_t tokenLength, const int depth);
 
     static DataType isTokenALiteral(std::string token);
+    static OperatorType isTokenAOperator(std::string token);
     static bool isTokenADatatype(std::string token);
     static bool isTokenAFunction(std::string token);
     static bool isTokenAVariable(std::string token);

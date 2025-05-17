@@ -14,11 +14,12 @@ namespace RlaT {
 namespace internal {
     
 const std::string RlaT_ProcessTree::c_functionKeyword = "func";
-const std::unordered_map<char, int> RlaT_ProcessTree::c_operatorPriorityMap = {
-    {'*', 2},
-    {'/', 2},
-    {'+', 1},
-    {'-', 1}
+const std::unordered_map<OperatorType, int> RlaT_ProcessTree::c_operatorPriorityMap = {
+    {OperatorType::SET, 3},
+    {OperatorType::MUL, 2},
+    {OperatorType::DIV, 2},
+    {OperatorType::ADD, 1},
+    {OperatorType::SUB, 1}
 };
 
 RlaT_ProcessTree::RlaT_ProcessTree(const std::string* tokens, const size_t tokenLength, RlaT_Script* rootScript) {
@@ -52,8 +53,21 @@ unique_ptr<RlaT_ProcessElement> RlaT_ProcessTree::createElementFromIndex(const s
     DataType datatypeCheckResult = isTokenALiteral(token);
     if(datatypeCheckResult != DataType::EMPY) {
         if(datatypeCheckResult == DataType::FUNCTION)
-            return make_unique<RlaT_ProcessElement>(ProcessElementType::FUNCTIONHEADER);
-        return make_unique<RlaT_ProcessElement>(ProcessElementType::LITERAL);
+            return make_unique<RlaT_ProcessElement>(ProcessElementType::FUNCTIONHEADER, false);
+        
+        switch(datatypeCheckResult) {
+            case DataType::INTEGER: {
+                return make_unique<RlaT_ProcessElement>(
+                    ProcessElementType::LITERAL,                     // type
+                    RlaT_Data(DataType::INTEGER, std::stoi(token))   // value
+                );
+            }
+        }
+    }
+
+    OperatorType operatorTypeCheckResult = isTokenAOperator(token);
+    if(operatorTypeCheckResult != OperatorType::NONE) {
+        return make_unique<RlaT_ProcessElement>(ProcessElementType::OPERATION, operatorTypeCheckResult);
     }
 
     if(isTokenADatatype(token)) {
@@ -69,7 +83,7 @@ unique_ptr<RlaT_ProcessElement> RlaT_ProcessTree::createElementFromIndex(const s
     }
 
     // The token is undefined
-    return make_unique<RlaT_ProcessElement>(ProcessElementType::ERROR);
+    return make_unique<RlaT_ProcessElement>(ProcessElementType::ERROR, "Token \"" + token + "\" is undefined");
 }
 
 vector<RlaT_ProcessElement> RlaT_ProcessTree::getAllElements(const std::string* tokens, const size_t tokenLength, const int depth) {
@@ -107,6 +121,18 @@ DataType RlaT_ProcessTree::isTokenALiteral(string token) {
 
     // Its not a datatype
     return DataType::EMPY;
+}
+
+OperatorType RlaT_ProcessTree::isTokenAOperator(std::string token) {
+    switch(token[0]) {
+        case '+': return OperatorType::ADD;
+        case '-': return OperatorType::SUB;
+        case '*': return OperatorType::MUL;
+        case '/': return OperatorType::DIV;
+        case '=': return OperatorType::SET;
+    }
+
+    return OperatorType::NONE;
 }
 
 bool RlaT_ProcessTree::isTokenADatatype(std::string token) {
@@ -155,18 +181,48 @@ std::vector<std::pair<std::unique_ptr<RlaT_ProcessElement>, int>> RlaT_ProcessTr
 void RlaT_ProcessTree::generateLiteralAST(const std::string* tokens, const size_t tokenLength) {
     std::vector<std::pair<std::unique_ptr<RlaT_ProcessElement>, int>> elementDepthMap = generateElementDepthMap(tokens, tokenLength);
 
+    // Debug
     for(size_t i = 0; i < elementDepthMap.size(); i++) {
         pair<std::unique_ptr<RlaT_ProcessElement>, int>& item = elementDepthMap[i];
         stringstream ss;
-        ss << to_string(item.second) << " - " << toString(item.first->getType());
+        if(item.first->getType() == ProcessElementType::LITERAL)
+            ss << to_string(item.second) << " - " << toString(item.first->getType()) << " => " << any_cast<RlaT_Data>(item.first->getValue()).toString();
+        else if(item.first->getType() == ProcessElementType::OPERATION)
+            ss << to_string(item.second) << " - " << toString(item.first->getType()) << " => " << toString(any_cast<OperatorType>(item.first->getValue()));
         std::cout << ss.str() << std::endl;
     }
 
-    // Find the Primary 
-
+    // Set constants and find the highest depth
+    static const int highestPrio = 2;
+    int highestDepth = 0;
+    for(size_t i = 0; i < elementDepthMap.size(); i++) {
+        if(elementDepthMap[i].second > highestPrio) highestDepth = elementDepthMap[i].second;
+    }
 
     // Create the calcuation expression
+    // And Replace the primaryElement with lowest Prio
+    int currentPrio = highestPrio;
     int currentDepth = 0;
+    while(currentDepth <= highestDepth) {
+        // Go though every element from left to right. First fo the the highest prio, then one lower etc.
+        // So same Prios on the same depth have a higher prio if they are more left
+        currentPrio = highestPrio;
+        while(currentPrio > -1) {
+            for(size_t i = 0; i < elementDepthMap.size(); i++) {
+                pair<std::unique_ptr<RlaT_ProcessElement>, int>& item = elementDepthMap[i];
+                if(item.second != currentDepth) continue;
+
+
+            }
+
+            currentPrio--;
+        }
+
+        currentDepth++;
+    }
+
+    // Create the calcuation expression
+    
     bool bracketFound = false;
     
     do {
