@@ -23,8 +23,8 @@ void RlaT_Script::ping() {
 
     outputString(result.toString());
 
-    std::string test[2] = {"print", "Test2"};
-    RlaT_ProcessTree tree = RlaT_ProcessTree(test, 2, this);
+    std::string test[] = {"10", "+", "(", "2", "+", "3", ")", "+", "10", "*", "5"};
+    RlaT_ProcessTree tree = RlaT_ProcessTree(test, 11, this);
     
 }
 

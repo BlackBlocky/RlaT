@@ -4,7 +4,7 @@
 
 1. Check if the line begins with any random value
 
-2. Check if the line begins with a datatype
+2. Check if the line begins with a datatype (Functions declarations wil also be checked here, but they are treated differently)
 
 3. Check if the line starts with a function (Build-In first, user second)
 
@@ -64,6 +64,7 @@ This case will happen, if the function starts with an Build-In function or an us
 ```cpp
 int value = 22;
 str text = "Wohoo";
+func someFunction() {}
 ```
 
 If the line starts with datatype, its automatically assumed, that a new variable is going to be assigned. If will create a local or global variable, based on if its in a scope of a function.

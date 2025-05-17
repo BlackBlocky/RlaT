@@ -9,9 +9,10 @@ namespace RlaT {
 namespace internal {
     
 enum class DataType {
-    EMPY = 0,     // value = bool
+    EMPY = 0,     // value = bool (unused)
     ERROR = 1,    // value = string
-    INTEGER = 2   // value = int32
+    INTEGER = 2,  // value = int32
+    FUNCTION = 3  // value = bool (unused) (Just for Interpreting purposes, not actually a Datatype)
 };
 enum class OperatorType {
     SET = 0,
