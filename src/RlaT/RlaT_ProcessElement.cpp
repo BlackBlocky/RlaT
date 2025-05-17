@@ -1,31 +1,33 @@
 #include "RlaT_ProcessElement.h"
 
+#include <memory>
+
 namespace RlaT {
 namespace internal {
 
 RlaT_ProcessElement::RlaT_ProcessElement(ProcessElementType type, std::any value) {
     this->_type = type;
     this->_value = value;
-    this->childs = std::vector<RlaT_ProcessElement*>();
+    this->childs = std::vector<std::shared_ptr<RlaT_ProcessElement>>();
 }
 
-const ProcessElementType RlaT_ProcessElement::getType() {
+ProcessElementType RlaT_ProcessElement::getType() {
     return this->_type;
 }
 
-void RlaT_ProcessElement::addChild(RlaT_ProcessElement* child) {
-    childs.push_back(child);
+void RlaT_ProcessElement::addChild(std::shared_ptr<RlaT_ProcessElement> child) {
+    childs.push_back(std::move(child));
 }
 
-const int RlaT_ProcessElement::getChildsSize() {
+int RlaT_ProcessElement::getChildsSize() {
     return childs.size();
 }
 
-const RlaT_ProcessElement& RlaT_ProcessElement::getChild(int index) {
+RlaT_ProcessElement& RlaT_ProcessElement::getChild(int index) {
     return *childs.at(index);
 }
 
-const std::any& RlaT_ProcessElement::getValue() {
+std::any& RlaT_ProcessElement::getValue() {
     return _value;
 } 
 

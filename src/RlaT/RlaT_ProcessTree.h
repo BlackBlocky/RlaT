@@ -28,26 +28,33 @@ class RlaT_ProcessTree {
 public:
     RlaT_ProcessTree(const std::string* tokens, const size_t tokenLength, RlaT_Script* rootScript);
 
+    void printToConsole();
+
 private:
     static const std::string c_functionKeyword;
     static const std::unordered_map<OperatorType, int> c_operatorPriorityMap;
 
     RlaT_Script* rootScript;
 
-    std::unique_ptr<RlaT_ProcessElement> _mainElement;
+    std::shared_ptr<RlaT_ProcessElement> _mainElement;
 
 
-    static std::unique_ptr<RlaT_ProcessElement> createElementFromIndex(const std::string* tokens, const int index);
+    std::unique_ptr<RlaT_ProcessElement> createElementFromIndex(const std::string* tokens, const int index);
     std::vector<RlaT_ProcessElement> getAllElements(const std::string* tokens, const size_t tokenLength, const int depth);
 
-    static DataType isTokenALiteral(std::string token);
-    static OperatorType isTokenAOperator(std::string token);
-    static bool isTokenADatatype(std::string token);
-    static bool isTokenAFunction(std::string token);
-    static bool isTokenAVariable(std::string token);
+    DataType isTokenALiteral(std::string token);
+    OperatorType isTokenAOperator(std::string token);
+    bool isTokenADatatype(std::string token);
+    bool isTokenAFunction(std::string token);
+    bool isTokenAVariable(std::string token);
 
-    static std::vector<std::pair<std::unique_ptr<RlaT_ProcessElement>, int>> generateElementDepthMap(const std::string* tokens, const size_t tokenLength);
-    static void generateLiteralAST(const std::string* tokens, const size_t tokenLength);
+    std::vector<std::pair<std::shared_ptr<RlaT_ProcessElement>, int>> generateElementDepthMap(const std::string* tokens, const size_t tokenLength);
+    void generateLiteralAST(const std::string* tokens, const size_t tokenLength);
+
+    struct OpFragment;
+    std::shared_ptr<RlaT_ProcessElement> r_createComputionTreeFromFragments(std::shared_ptr<OpFragment> fragment);
+
+    void r_printStep(RlaT_ProcessElement& current, int depth);
 };
 
 } // namespace internal

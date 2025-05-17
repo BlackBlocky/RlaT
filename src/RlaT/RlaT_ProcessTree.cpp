@@ -35,7 +35,7 @@ RlaT_ProcessTree::RlaT_ProcessTree(const std::string* tokens, const size_t token
         rootScript->outputErrorString(ss.str());
         return;
     }
-
+    
     // Process the Line based on its type
     if(_mainElement->getType() == ProcessElementType::LITERAL) {
         generateLiteralAST(tokens, tokenLength);
@@ -45,6 +45,33 @@ RlaT_ProcessTree::RlaT_ProcessTree(const std::string* tokens, const size_t token
     stringstream ss;
     ss << (int)_mainElement->getType();
     this->rootScript->outputString(ss.str());
+
+    printToConsole();
+}
+
+void RlaT_ProcessTree::printToConsole() {
+    r_printStep(*_mainElement, 0);
+}
+
+void RlaT_ProcessTree::r_printStep(RlaT_ProcessElement& current, int depth) {
+    // Create line for current
+    stringstream ss;
+    for(int i = 0; i < depth; i++) ss << "..";
+    ss << toString(current.getType()) << " -> ";
+    switch(current.getType()) {
+        case ProcessElementType::LITERAL: {
+            ss << any_cast<RlaT_Data>(current.getValue()).toString();
+            break;
+        }
+        case ProcessElementType::OPERATION: {
+            ss << toString(any_cast<OperatorType>(current.getValue()));
+            break;
+        }
+    }
+    cout << ss.str() << std::endl;
+
+    // Start lines for childs
+    for(size_t i = 0; i < current.getChildsSize(); i++) r_printStep(current.getChild(i), depth + 1);
 }
 
 unique_ptr<RlaT_ProcessElement> RlaT_ProcessTree::createElementFromIndex(const std::string* tokens, const int index) {
@@ -148,10 +175,10 @@ bool RlaT_ProcessTree::isTokenAVariable(std::string token) {
 }
 
 
-std::vector<std::pair<std::unique_ptr<RlaT_ProcessElement>, int>> RlaT_ProcessTree::generateElementDepthMap(const std::string* tokens, const size_t tokenLength) {
+std::vector<std::pair<std::shared_ptr<RlaT_ProcessElement>, int>> RlaT_ProcessTree::generateElementDepthMap(const std::string* tokens, const size_t tokenLength) {
     // Create a Element for every Elementable token.
     // Store every element in a map, while the key is the element and the value is the depth
-    vector<pair<unique_ptr<RlaT_ProcessElement>, int>> tokenElementDepthMap;
+    vector<pair<shared_ptr<RlaT_ProcessElement>, int>> tokenElementDepthMap;
     int currentDepth = 0;
 
     for(size_t i = 0; i < tokenLength; i++) {
@@ -166,7 +193,7 @@ std::vector<std::pair<std::unique_ptr<RlaT_ProcessElement>, int>> RlaT_ProcessTr
             }
             default: {
                 tokenElementDepthMap.push_back(make_pair(
-                    createElementFromIndex(tokens, i),
+                    std::move(createElementFromIndex(tokens, i)),
                     currentDepth
                 ));
                 break;
@@ -178,12 +205,33 @@ std::vector<std::pair<std::unique_ptr<RlaT_ProcessElement>, int>> RlaT_ProcessTr
     return tokenElementDepthMap;
 }
 
+struct RlaT_ProcessTree::OpFragment {
+    shared_ptr<RlaT_ProcessElement> leftLiteral;
+    shared_ptr<RlaT_ProcessElement> rightLiteral;
+    shared_ptr<OpFragment> leftFragment;
+    shared_ptr<OpFragment> rightFramgent;
+
+    bool leftIsLiteral;
+    bool rightIsLiteral;
+
+    shared_ptr<RlaT_ProcessElement> operatorElement;
+
+    OpFragment(
+        shared_ptr<RlaT_ProcessElement> lL, shared_ptr<OpFragment> lF, bool lIL,
+        shared_ptr<RlaT_ProcessElement> rL, shared_ptr<OpFragment> rF, bool rIL,
+        shared_ptr<RlaT_ProcessElement> operatorElement)
+            : leftLiteral(move(lL)), leftFragment(lF), leftIsLiteral(lIL),
+              rightLiteral(move(rL)), rightFramgent(rF), rightIsLiteral(rIL),
+              operatorElement(move(operatorElement)) { }
+};
+
+// Generate the AST using the Shunting Yard Algorithm
 void RlaT_ProcessTree::generateLiteralAST(const std::string* tokens, const size_t tokenLength) {
-    std::vector<std::pair<std::unique_ptr<RlaT_ProcessElement>, int>> elementDepthMap = generateElementDepthMap(tokens, tokenLength);
+    std::vector<std::pair<std::shared_ptr<RlaT_ProcessElement>, int>> elementDepthMap = generateElementDepthMap(tokens, tokenLength);
 
     // Debug
     for(size_t i = 0; i < elementDepthMap.size(); i++) {
-        pair<std::unique_ptr<RlaT_ProcessElement>, int>& item = elementDepthMap[i];
+        pair<std::shared_ptr<RlaT_ProcessElement>, int>& item = elementDepthMap[i];
         stringstream ss;
         if(item.first->getType() == ProcessElementType::LITERAL)
             ss << to_string(item.second) << " - " << toString(item.first->getType()) << " => " << any_cast<RlaT_Data>(item.first->getValue()).toString();
@@ -196,38 +244,79 @@ void RlaT_ProcessTree::generateLiteralAST(const std::string* tokens, const size_
     static const int highestPrio = 2;
     int highestDepth = 0;
     for(size_t i = 0; i < elementDepthMap.size(); i++) {
-        if(elementDepthMap[i].second > highestPrio) highestDepth = elementDepthMap[i].second;
+        if(elementDepthMap[i].second > highestDepth) highestDepth = elementDepthMap[i].second;
+    }
+    int operatorsCount = 0;
+    for(size_t i = 0; i < elementDepthMap.size(); i++) {
+        if(elementDepthMap[i].first->getType() == ProcessElementType::OPERATION) operatorsCount++;
     }
 
-    // Create the calcuation expression
-    // And Replace the primaryElement with lowest Prio
+    // Create calculation blocks
+    // Example: 1+(5*2+10*3)   =>  0= [5*2], 1= [10*3], 2= [(0)+(1)], ...
     int currentPrio = highestPrio;
-    int currentDepth = 0;
-    while(currentDepth <= highestDepth) {
+    int currentDepth = highestDepth;
+
+    // The index of the Elements is matching of the operatorNr. Example -> Operation nr. 1 is at index 0
+    shared_ptr<OpFragment> fragmentArray[operatorsCount];
+    // Here its sorted by the creating order -> Deepest is first, last Block is last.
+    // NOTE: Its going to be inverted later!
+    vector<shared_ptr<OpFragment>> sortedFragementArray;
+
+    // Looping from highest depth to lowest
+    while(currentDepth >= 0) {
+
         // Go though every element from left to right. First fo the the highest prio, then one lower etc.
         // So same Prios on the same depth have a higher prio if they are more left
         currentPrio = highestPrio;
         while(currentPrio > -1) {
+            int currentOperatorNumber = -1; // The first Operator will be 0
             for(size_t i = 0; i < elementDepthMap.size(); i++) {
-                pair<std::unique_ptr<RlaT_ProcessElement>, int>& item = elementDepthMap[i];
+                // Check if in correct Depth
+                pair<std::shared_ptr<RlaT_ProcessElement>, int>& item = elementDepthMap[i];
+                if(item.first->getType() == ProcessElementType::OPERATION) currentOperatorNumber++;
                 if(item.second != currentDepth) continue;
 
+                // Note: Its not possible that a operator is at index 0
+                // Creating a block if the operator matches the current Prio
+                // If its a number its going to be skipped
+                if(item.first->getType() != ProcessElementType::OPERATION) continue;
+                int elementOperatorPrio = c_operatorPriorityMap.at(any_cast<OperatorType>(item.first->getValue()));
+                if(elementOperatorPrio != currentPrio) continue;
 
+                // Create the Fragment/Block -----------------------
+                bool isLeftAlreadyFragmented  = currentOperatorNumber != 0                   && fragmentArray[currentOperatorNumber - 1] != nullptr;
+                bool isRightAlreadyFragmented = currentOperatorNumber != operatorsCount - 1 && fragmentArray[currentOperatorNumber + 1] != nullptr;
+
+                fragmentArray[currentOperatorNumber] = make_shared<OpFragment>(
+                    (isLeftAlreadyFragmented) ? nullptr : elementDepthMap[i - 1].first, (isLeftAlreadyFragmented) ? fragmentArray[currentOperatorNumber - 1] : nullptr, !isLeftAlreadyFragmented,
+                    (isRightAlreadyFragmented) ? nullptr : elementDepthMap[i + 1].first, (isRightAlreadyFragmented) ? fragmentArray[currentOperatorNumber + 1] : nullptr, !isRightAlreadyFragmented,
+                    item.first
+                );
+                sortedFragementArray.push_back(fragmentArray[currentOperatorNumber]);
+
+                cout << "Op: " << currentOperatorNumber << "\n";
             }
-
             currentPrio--;
         }
-
-        currentDepth++;
+        currentDepth--;
     }
 
-    // Create the calcuation expression
-    
-    bool bracketFound = false;
-    
-    do {
+    // Inverting/Reversing the SortedFramgentArray
+    std::reverse(sortedFragementArray.begin(), sortedFragementArray.end());
 
-    } while(bracketFound);
+    for(size_t i = 0; i < operatorsCount; i++) {
+        cout << "Framgent " << i << ": " << sortedFragementArray[i]->leftIsLiteral << " " << toString(any_cast<OperatorType>(sortedFragementArray[i]->operatorElement->getValue())) << " " << sortedFragementArray[i]->rightIsLiteral << "\n";
+    }
+
+    // Convert the first framgent
+    _mainElement = move(r_createComputionTreeFromFragments(sortedFragementArray[0]));
+}
+shared_ptr<RlaT_ProcessElement> RlaT_ProcessTree::r_createComputionTreeFromFragments(shared_ptr<OpFragment> fragment) {
+    shared_ptr<RlaT_ProcessElement> current = move(fragment->operatorElement);
+    current->addChild((fragment->leftIsLiteral) ? fragment->leftLiteral : r_createComputionTreeFromFragments(fragment->leftFragment));
+    current->addChild((fragment->rightIsLiteral) ? fragment->rightLiteral : r_createComputionTreeFromFragments(fragment->rightFramgent));
+
+    return current;
 }
 
 } // namespace internal

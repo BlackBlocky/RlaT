@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <any>
+#include <memory>
 
 namespace RlaT {
 namespace internal {
@@ -32,16 +33,16 @@ inline std::string toString(ProcessElementType type) {
 class RlaT_ProcessElement {
 public:
     RlaT_ProcessElement(ProcessElementType type, std::any value);
-    const ProcessElementType getType();
-    void addChild(RlaT_ProcessElement*);
-    const int getChildsSize();
-    const RlaT_ProcessElement& getChild(int index);
+    ProcessElementType getType();
+    void addChild(std::shared_ptr<RlaT_ProcessElement>);
+    int getChildsSize();
+    RlaT_ProcessElement& getChild(int index);
 
-    const std::any& getValue();
+    std::any& getValue();
 
 private:
     ProcessElementType _type;
-    std::vector<RlaT_ProcessElement*> childs;
+    std::vector<std::shared_ptr<RlaT_ProcessElement>> childs;
 
     std::any _value;
 };
