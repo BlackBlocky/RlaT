@@ -212,8 +212,6 @@ struct RlaT_ProcessTree::OpFragment {
     shared_ptr<OpFragment> leftFragment;
     shared_ptr<OpFragment> rightFramgent;
 
-    shared_ptr<OpFragment> parentFragment;
-
     bool leftIsLiteral;
     bool rightIsLiteral;
 
@@ -222,26 +220,34 @@ struct RlaT_ProcessTree::OpFragment {
     OpFragment(
         shared_ptr<RlaT_ProcessElement> lL, shared_ptr<OpFragment> lF, bool lIL,
         shared_ptr<RlaT_ProcessElement> rL, shared_ptr<OpFragment> rF, bool rIL,
-        shared_ptr<RlaT_ProcessElement> operatorElement)
+        shared_ptr<RlaT_ProcessElement> operatorElement, vector<pair<shared_ptr<OpFragment>, shared_ptr<OpFragment>>>& usesLog)
             : leftLiteral(move(lL)), leftFragment(lF), leftIsLiteral(lIL),
               rightLiteral(move(rL)), rightFramgent(rF), rightIsLiteral(rIL),
               operatorElement(move(operatorElement)) { 
-
-        // Move the linked Fragments to their highest parent, so that the correct blocks are actually used
-        // And also make sure that the parent is for both childs set
-        if(!leftIsLiteral) {
-            while(leftFragment->parentFragment != nullptr) leftFragment = leftFragment->parentFragment;
-
-            if(!leftFragment->leftIsLiteral && leftFragment->leftFragment->parentFragment == nullptr) leftFragment->leftFragment->parentFragment = leftFragment;
-            if(!leftFragment->rightIsLiteral && leftFragment->rightFramgent->parentFragment == nullptr) leftFragment->rightFramgent->parentFragment = leftFragment;
-        }
-        if(!rightIsLiteral) {
-            while(rightFramgent->parentFragment != nullptr) rightFramgent = rightFramgent->parentFragment;
-
-            if(!rightFramgent->leftIsLiteral && rightFramgent->leftFragment->parentFragment == nullptr) rightFramgent->leftFragment->parentFragment = rightFramgent;
-            if(!rightFramgent->rightIsLiteral && rightFramgent->rightFramgent->parentFragment == nullptr) rightFramgent->rightFramgent->parentFragment = rightFramgent;
-        }
         
+        // Go through the logs Array backwards. Check if the framgent is already used by any higher framgent, if it is the case,
+        // set the framgent to the higher framgnet.
+        // Repeat until no more used are found
+
+        while (searchHigherFragmentAndReplace(leftFragment, usesLog)) ;
+        while (searchHigherFragmentAndReplace(rightFramgent, usesLog)) ;
+    }
+
+    // Returns true until nothing higher is found
+    // NOTE: first is used, second is user
+    bool searchHigherFragmentAndReplace(shared_ptr<OpFragment>& original, vector<pair<shared_ptr<OpFragment>, shared_ptr<OpFragment>>>& usesLog) {
+        if(usesLog.size() == 0) return false;
+        
+        for(size_t i = usesLog.size(); i-- > 0;) {
+            cout << usesLog.size() << " size\n";
+            cout << i << "INDEX \n";
+            if(usesLog[i].first.get() == original.get()) {
+                original = usesLog[i].second;
+                return true;
+            }
+        }
+
+        return false;
     }
 };
 
@@ -282,6 +288,10 @@ void RlaT_ProcessTree::generateLiteralAST(const std::string* tokens, const size_
     // NOTE: Its going to be inverted later!
     vector<shared_ptr<OpFragment>> sortedFragementArray;
 
+    // Stores if a higher fragemnt uses a deeper fragemnt. For Example, of the +fragment(id=1)  at 1 * 2 + 2
+    // uses the *fragment(id=0), it will be logged like this: 0,1 (left used, right user)
+    vector<pair<shared_ptr<OpFragment>, shared_ptr<OpFragment>>> fragmentUseLog;
+
     // Looping from highest depth to lowest
     while(currentDepth >= 0) {
 
@@ -307,17 +317,19 @@ void RlaT_ProcessTree::generateLiteralAST(const std::string* tokens, const size_
                 bool isLeftAlreadyFragmented  = currentOperatorNumber != 0                   && fragmentArray[currentOperatorNumber - 1] != nullptr;
                 bool isRightAlreadyFragmented = currentOperatorNumber != operatorsCount - 1 && fragmentArray[currentOperatorNumber + 1] != nullptr;
 
-                // Note: The Constructor of the OpFragment will change automatically move up to the highest parent on the linked fragments
+                // Note: The Constructor will search for higher fragments using the log. So if a fragment already used the given fragent, it will be replaced with the
+                // fragment that used the fragemnt. used framgent = user framgent
                 fragmentArray[currentOperatorNumber] = make_shared<OpFragment>(
                     (isLeftAlreadyFragmented) ? nullptr : elementDepthMap[i - 1].first, (isLeftAlreadyFragmented) ? fragmentArray[currentOperatorNumber - 1] : nullptr, !isLeftAlreadyFragmented,
                     (isRightAlreadyFragmented) ? nullptr : elementDepthMap[i + 1].first, (isRightAlreadyFragmented) ? fragmentArray[currentOperatorNumber + 1] : nullptr, !isRightAlreadyFragmented,
-                    item.first
+                    item.first,
+                    fragmentUseLog
                 );
                 sortedFragementArray.push_back(fragmentArray[currentOperatorNumber]);
 
-                // Update parent on lower fragments if needed
-                if (isLeftAlreadyFragmented) fragmentArray[currentOperatorNumber - 1]->parentFragment = fragmentArray[currentOperatorNumber];
-                if (isRightAlreadyFragmented) fragmentArray[currentOperatorNumber + 1]->parentFragment = fragmentArray[currentOperatorNumber];
+                // Log fragment-uses if needed
+                if(isLeftAlreadyFragmented) fragmentUseLog.push_back(make_pair(fragmentArray[currentOperatorNumber]->leftFragment, fragmentArray[currentOperatorNumber]));
+                if(isRightAlreadyFragmented) fragmentUseLog.push_back(make_pair(fragmentArray[currentOperatorNumber]->rightFramgent, fragmentArray[currentOperatorNumber]));
 
                 cout << "Op: " << currentOperatorNumber << "\n";
             }
