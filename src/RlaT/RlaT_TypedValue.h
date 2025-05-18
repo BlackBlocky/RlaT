@@ -36,34 +36,34 @@ inline std::string toString(OperatorType op) {
     }
 }
 
-class RlaT_Data {
+class TypedValue {
 public:
-    RlaT_Data(DataType type, std::any defaultValue);
+    TypedValue(DataType type, std::any defaultValue);
     DataType getType();
     std::any getAnyValue();
     std::string toString();
 
-    static RlaT_Data evaluate(RlaT_Data a, RlaT_Data b, OperatorType operation);
+    static TypedValue evaluate(TypedValue a, TypedValue b, OperatorType operation);
 
 
 private:
     static const std::array<std::string, 3> datatypeNames;
 
     static const std::array<std::string, 5> operationNames;
-    static const std::array<std::function<RlaT_Data(RlaT_Data, RlaT_Data)>, 5> operationMethods;
+    static const std::array<std::function<TypedValue(TypedValue, TypedValue)>, 5> operationMethods;
 
 
     DataType type;
     std::any value;
     
 
-    static RlaT_Data evSet(RlaT_Data a, RlaT_Data b);
-    static RlaT_Data evAdd(RlaT_Data a, RlaT_Data b);
-    static RlaT_Data evSub(RlaT_Data a, RlaT_Data b);
-    static RlaT_Data evMul(RlaT_Data a, RlaT_Data b);
-    static RlaT_Data evDiv(RlaT_Data a, RlaT_Data b);
+    static TypedValue evSet(TypedValue a, TypedValue b);
+    static TypedValue evAdd(TypedValue a, TypedValue b);
+    static TypedValue evSub(TypedValue a, TypedValue b);
+    static TypedValue evMul(TypedValue a, TypedValue b);
+    static TypedValue evDiv(TypedValue a, TypedValue b);
 
-    static RlaT_Data evCreateError(DataType datatype, OperatorType op);
+    static TypedValue evCreateError(DataType datatype, OperatorType op);
 };
 
 } // namespace internal

@@ -10,7 +10,7 @@ namespace RlaT {
 namespace internal {
 
 enum class ProcessElementType {
-    LITERAL = 0,         // A basic value like 2 or "text"           // Contains RlaT_Data.h
+    LITERAL = 0,         // A basic value like 2 or "text"           // Contains TypedValue.h
     VARIABLE = 1,        // Reference to a variable                  // Contains TODO
     BINARYOPERATION = 2, // Contains a operation like + - = etc      // Contains OperationType
     ERROR = 3,           // Error                                    // Contains std::string
@@ -30,19 +30,19 @@ inline std::string toString(ProcessElementType type) {
     }
 }
 
-class RlaT_ProcessElement {
+class ProcessElement {
 public:
-    RlaT_ProcessElement(ProcessElementType type, std::any value);
+    ProcessElement(ProcessElementType type, std::any value);
     ProcessElementType getType();
-    void addChild(std::shared_ptr<RlaT_ProcessElement>);
+    void addChild(std::shared_ptr<ProcessElement>);
     int getChildsSize();
-    RlaT_ProcessElement& getChild(int index);
+    ProcessElement& getChild(int index);
 
     std::any& getValue();
 
 private:
     ProcessElementType _type;
-    std::vector<std::shared_ptr<RlaT_ProcessElement>> childs;
+    std::vector<std::shared_ptr<ProcessElement>> childs;
 
     std::any _value;
 };

@@ -2,7 +2,7 @@
 
 #include "RlaT_ProcessElement.h"
 #include "RlaT_Script.h"
-#include "RlaT_Data.h"
+#include "RlaT_TypedValue.h"
 #include <sstream>
 #include <regex>
 #include <iostream>
@@ -13,8 +13,8 @@ using namespace RlaT;
 namespace RlaT {
 namespace internal {
     
-const std::string RlaT_ProcessTree::c_functionKeyword = "func";
-const std::unordered_map<OperatorType, int> RlaT_ProcessTree::c_operatorPriorityMap = {
+const std::string ProcessTree::c_functionKeyword = "func";
+const std::unordered_map<OperatorType, int> ProcessTree::c_operatorPriorityMap = {
     {OperatorType::SET, 3},
     {OperatorType::MUL, 2},
     {OperatorType::DIV, 2},
@@ -22,7 +22,7 @@ const std::unordered_map<OperatorType, int> RlaT_ProcessTree::c_operatorPriority
     {OperatorType::SUB, 1}
 };
 
-RlaT_ProcessTree::RlaT_ProcessTree(const std::string* tokens, const size_t tokenLength, RlaT_Script* rootScript) {
+ProcessTree::ProcessTree(const std::string* tokens, const size_t tokenLength, RlaTScript* rootScript) {
     this->rootScript = rootScript;
 
     // Create the element of the first token
@@ -45,18 +45,18 @@ RlaT_ProcessTree::RlaT_ProcessTree(const std::string* tokens, const size_t token
     printToConsole();
 }
 
-void RlaT_ProcessTree::printToConsole() {
+void ProcessTree::printToConsole() {
     r_printStep(*_mainElement, 0);
 }
 
-void RlaT_ProcessTree::r_printStep(RlaT_ProcessElement& current, int depth) {
+void ProcessTree::r_printStep(ProcessElement& current, int depth) {
     // Create line for current
     stringstream ss;
     for(int i = 0; i < depth; i++) ss << "..";
     ss << toString(current.getType()) << " -> ";
     switch(current.getType()) {
         case ProcessElementType::LITERAL: {
-            ss << any_cast<RlaT_Data>(current.getValue()).toString();
+            ss << any_cast<TypedValue>(current.getValue()).toString();
             break;
         }
         case ProcessElementType::BINARYOPERATION: {
@@ -70,19 +70,19 @@ void RlaT_ProcessTree::r_printStep(RlaT_ProcessElement& current, int depth) {
     for(size_t i = 0; i < current.getChildsSize(); i++) r_printStep(current.getChild(i), depth + 1);
 }
 
-unique_ptr<RlaT_ProcessElement> RlaT_ProcessTree::createElementFromIndex(const std::string* tokens, const int index) {
+unique_ptr<ProcessElement> ProcessTree::createElementFromIndex(const std::string* tokens, const int index) {
     const string& token = tokens[index];
     
     DataType datatypeCheckResult = isTokenALiteral(token);
     if(datatypeCheckResult != DataType::EMPY) {
         if(datatypeCheckResult == DataType::FUNCTION)
-            return make_unique<RlaT_ProcessElement>(ProcessElementType::FUNCTIONHEADER, false);
+            return make_unique<ProcessElement>(ProcessElementType::FUNCTIONHEADER, false);
         
         switch(datatypeCheckResult) {
             case DataType::INTEGER: {
-                return make_unique<RlaT_ProcessElement>(
+                return make_unique<ProcessElement>(
                     ProcessElementType::LITERAL,                     // type
-                    RlaT_Data(DataType::INTEGER, std::stoi(token))   // value
+                    TypedValue(DataType::INTEGER, std::stoi(token))   // value
                 );
             }
         }
@@ -90,7 +90,7 @@ unique_ptr<RlaT_ProcessElement> RlaT_ProcessTree::createElementFromIndex(const s
 
     OperatorType operatorTypeCheckResult = isTokenAOperator(token);
     if(operatorTypeCheckResult != OperatorType::NONE) {
-        return make_unique<RlaT_ProcessElement>(ProcessElementType::BINARYOPERATION, operatorTypeCheckResult);
+        return make_unique<ProcessElement>(ProcessElementType::BINARYOPERATION, operatorTypeCheckResult);
     }
 
     if(isTokenADatatype(token)) {
@@ -106,10 +106,10 @@ unique_ptr<RlaT_ProcessElement> RlaT_ProcessTree::createElementFromIndex(const s
     }
 
     // The token is undefined
-    return make_unique<RlaT_ProcessElement>(ProcessElementType::ERROR, "Token \"" + token + "\" is undefined");
+    return make_unique<ProcessElement>(ProcessElementType::ERROR, "Token \"" + token + "\" is undefined");
 }
 
-vector<RlaT_ProcessElement> RlaT_ProcessTree::getAllElements(const std::string* tokens, const size_t tokenLength, const int depth) {
+vector<ProcessElement> ProcessTree::getAllElements(const std::string* tokens, const size_t tokenLength, const int depth) {
     int currentDepth = 0;
 
     for(size_t i = 0; i < tokenLength; i++) {
@@ -129,10 +129,10 @@ vector<RlaT_ProcessElement> RlaT_ProcessTree::getAllElements(const std::string* 
         }
     }
 
-    return vector<RlaT_ProcessElement>(); // just get rid of the warning, still TODO!!
+    return vector<ProcessElement>(); // just get rid of the warning, still TODO!!
 }
 
-DataType RlaT_ProcessTree::isTokenALiteral(string token) {
+DataType ProcessTree::isTokenALiteral(string token) {
     static const regex int_regex(R"(^[+-]?\d+$)"); // 1, +12, -123, ...
     if(regex_match(token, int_regex)) {
         return DataType::INTEGER;
@@ -146,7 +146,7 @@ DataType RlaT_ProcessTree::isTokenALiteral(string token) {
     return DataType::EMPY;
 }
 
-OperatorType RlaT_ProcessTree::isTokenAOperator(std::string token) {
+OperatorType ProcessTree::isTokenAOperator(std::string token) {
     switch(token[0]) {
         case '+': return OperatorType::ADD;
         case '-': return OperatorType::SUB;
@@ -158,23 +158,23 @@ OperatorType RlaT_ProcessTree::isTokenAOperator(std::string token) {
     return OperatorType::NONE;
 }
 
-bool RlaT_ProcessTree::isTokenADatatype(std::string token) {
+bool ProcessTree::isTokenADatatype(std::string token) {
     return false;
 }
 
-bool RlaT_ProcessTree::isTokenAFunction(std::string token) {
+bool ProcessTree::isTokenAFunction(std::string token) {
     return false;
 }
 
-bool RlaT_ProcessTree::isTokenAVariable(std::string token) {
+bool ProcessTree::isTokenAVariable(std::string token) {
     return false;
 }
 
 
-std::vector<std::pair<std::shared_ptr<RlaT_ProcessElement>, int>> RlaT_ProcessTree::generateElementDepthMap(const std::string* tokens, const size_t tokenLength) {
+std::vector<std::pair<std::shared_ptr<ProcessElement>, int>> ProcessTree::generateElementDepthMap(const std::string* tokens, const size_t tokenLength) {
     // Create a Element for every Elementable token.
     // Store every element in a map, while the key is the element and the value is the depth
-    vector<pair<shared_ptr<RlaT_ProcessElement>, int>> tokenElementDepthMap;
+    vector<pair<shared_ptr<ProcessElement>, int>> tokenElementDepthMap;
     int currentDepth = 0;
 
     for(size_t i = 0; i < tokenLength; i++) {
@@ -201,21 +201,21 @@ std::vector<std::pair<std::shared_ptr<RlaT_ProcessElement>, int>> RlaT_ProcessTr
     return tokenElementDepthMap;
 }
 
-struct RlaT_ProcessTree::OpFragment {
-    shared_ptr<RlaT_ProcessElement> leftLiteral;
-    shared_ptr<RlaT_ProcessElement> rightLiteral;
+struct ProcessTree::OpFragment {
+    shared_ptr<ProcessElement> leftLiteral;
+    shared_ptr<ProcessElement> rightLiteral;
     shared_ptr<OpFragment> leftFragment;
     shared_ptr<OpFragment> rightFragment;
 
     bool leftIsLiteral;
     bool rightIsLiteral;
 
-    shared_ptr<RlaT_ProcessElement> operatorElement;
+    shared_ptr<ProcessElement> operatorElement;
 
     OpFragment(
-        shared_ptr<RlaT_ProcessElement> lL, shared_ptr<OpFragment> lF, bool lIL,
-        shared_ptr<RlaT_ProcessElement> rL, shared_ptr<OpFragment> rF, bool rIL,
-        shared_ptr<RlaT_ProcessElement> operatorElement, vector<pair<shared_ptr<OpFragment>, shared_ptr<OpFragment>>>& usesLog)
+        shared_ptr<ProcessElement> lL, shared_ptr<OpFragment> lF, bool lIL,
+        shared_ptr<ProcessElement> rL, shared_ptr<OpFragment> rF, bool rIL,
+        shared_ptr<ProcessElement> operatorElement, vector<pair<shared_ptr<OpFragment>, shared_ptr<OpFragment>>>& usesLog)
             : leftLiteral(move(lL)), leftFragment(lF), leftIsLiteral(lIL),
               rightLiteral(move(rL)), rightFragment(rF), rightIsLiteral(rIL),
               operatorElement(move(operatorElement)) { 
@@ -247,16 +247,16 @@ struct RlaT_ProcessTree::OpFragment {
 };
 
 // Generate the AST using the Shunting Yard Algorithm
-shared_ptr<RlaT_ProcessElement> RlaT_ProcessTree::generateBinaryOperationAST(const std::string* tokens, const size_t tokenLength) {
-    std::vector<std::pair<std::shared_ptr<RlaT_ProcessElement>, int>> elementDepthMap = generateElementDepthMap(tokens, tokenLength);
+shared_ptr<ProcessElement> ProcessTree::generateBinaryOperationAST(const std::string* tokens, const size_t tokenLength) {
+    std::vector<std::pair<std::shared_ptr<ProcessElement>, int>> elementDepthMap = generateElementDepthMap(tokens, tokenLength);
 
     /*
     // Debug
     for(size_t i = 0; i < elementDepthMap.size(); i++) {
-        pair<std::shared_ptr<RlaT_ProcessElement>, int>& item = elementDepthMap[i];
+        pair<std::shared_ptr<ProcessElement>, int>& item = elementDepthMap[i];
         stringstream ss;
         if(item.first->getType() == ProcessElementType::LITERAL)
-            ss << to_string(item.second) << " - " << toString(item.first->getType()) << " => " << any_cast<RlaT_Data>(item.first->getValue()).toString();
+            ss << to_string(item.second) << " - " << toString(item.first->getType()) << " => " << any_cast<TypedValue>(item.first->getValue()).toString();
         else if(item.first->getType() == ProcessElementType::BINARYOPERATION)
             ss << to_string(item.second) << " - " << toString(item.first->getType()) << " => " << toString(any_cast<OperatorType>(item.first->getValue()));
         std::cout << ss.str() << std::endl;
@@ -298,7 +298,7 @@ shared_ptr<RlaT_ProcessElement> RlaT_ProcessTree::generateBinaryOperationAST(con
             int currentOperatorNumber = -1; // The first Operator will be 0
             for(size_t i = 0; i < elementDepthMap.size(); i++) {
                 // Check if in correct Depth
-                pair<std::shared_ptr<RlaT_ProcessElement>, int>& item = elementDepthMap[i];
+                pair<std::shared_ptr<ProcessElement>, int>& item = elementDepthMap[i];
                 if(item.first->getType() == ProcessElementType::BINARYOPERATION) currentOperatorNumber++;
                 if(item.second != currentDepth) continue;
 
@@ -345,8 +345,8 @@ shared_ptr<RlaT_ProcessElement> RlaT_ProcessTree::generateBinaryOperationAST(con
     // Convert the first framgent
     return r_createComputionTreeFromFragments(sortedFragementArray[0]);
 }
-shared_ptr<RlaT_ProcessElement> RlaT_ProcessTree::r_createComputionTreeFromFragments(shared_ptr<OpFragment> fragment) {
-    shared_ptr<RlaT_ProcessElement> current = move(fragment->operatorElement);
+shared_ptr<ProcessElement> ProcessTree::r_createComputionTreeFromFragments(shared_ptr<OpFragment> fragment) {
+    shared_ptr<ProcessElement> current = move(fragment->operatorElement);
     current->addChild((fragment->leftIsLiteral) ? fragment->leftLiteral : r_createComputionTreeFromFragments(fragment->leftFragment));
     current->addChild((fragment->rightIsLiteral) ? fragment->rightLiteral : r_createComputionTreeFromFragments(fragment->rightFragment));
 

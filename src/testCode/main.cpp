@@ -1,6 +1,6 @@
 #include <iostream>
 #include <RlaT_Script.h>
-#include <RlaT_Data.h>
+#include <RlaT_TypedValue.h>
 
 #include <string>
 
@@ -16,7 +16,7 @@ string red = "\e[0;31m";
 
 int main() {
     
-    RlaT::RlaT_Script newScript = RlaT::RlaT_Script();
+    RlaT::RlaTScript newScript = RlaT::RlaTScript();
 
     newScript.setOutputMethod(coolMethod);
     newScript.setOutputErrorMethod(badMethod);

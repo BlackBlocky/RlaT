@@ -7,10 +7,10 @@
 #include <unordered_map>
 
 #include "RlaT_ProcessElement.h"
-#include "RlaT_Data.h"
+#include "RlaT_TypedValue.h"
 
 namespace RlaT {
-class RlaT_Script;
+class RlaTScript;
 
 namespace internal {
 
@@ -24,9 +24,9 @@ namespace internal {
     If its just a simple line of code, it will just execute it. If it is a Function, it will just add the
     Process the Instance to the Functions of the root script.
 */
-class RlaT_ProcessTree {
+class ProcessTree {
 public:
-    RlaT_ProcessTree(const std::string* tokens, const size_t tokenLength, RlaT_Script* rootScript);
+    ProcessTree(const std::string* tokens, const size_t tokenLength, RlaTScript* rootScript);
 
     void printToConsole();
 
@@ -34,13 +34,13 @@ private:
     static const std::string c_functionKeyword;
     static const std::unordered_map<OperatorType, int> c_operatorPriorityMap;
 
-    RlaT_Script* rootScript;
+    RlaTScript* rootScript;
 
-    std::shared_ptr<RlaT_ProcessElement> _mainElement;
+    std::shared_ptr<ProcessElement> _mainElement;
 
 
-    std::unique_ptr<RlaT_ProcessElement> createElementFromIndex(const std::string* tokens, const int index);
-    std::vector<RlaT_ProcessElement> getAllElements(const std::string* tokens, const size_t tokenLength, const int depth);
+    std::unique_ptr<ProcessElement> createElementFromIndex(const std::string* tokens, const int index);
+    std::vector<ProcessElement> getAllElements(const std::string* tokens, const size_t tokenLength, const int depth);
 
     DataType isTokenALiteral(std::string token);
     OperatorType isTokenAOperator(std::string token);
@@ -48,13 +48,13 @@ private:
     bool isTokenAFunction(std::string token);
     bool isTokenAVariable(std::string token);
 
-    std::vector<std::pair<std::shared_ptr<RlaT_ProcessElement>, int>> generateElementDepthMap(const std::string* tokens, const size_t tokenLength);
-    std::shared_ptr<RlaT_ProcessElement> generateBinaryOperationAST(const std::string* tokens, const size_t tokenLength);
+    std::vector<std::pair<std::shared_ptr<ProcessElement>, int>> generateElementDepthMap(const std::string* tokens, const size_t tokenLength);
+    std::shared_ptr<ProcessElement> generateBinaryOperationAST(const std::string* tokens, const size_t tokenLength);
 
     struct OpFragment;
-    std::shared_ptr<RlaT_ProcessElement> r_createComputionTreeFromFragments(std::shared_ptr<OpFragment> fragment);
+    std::shared_ptr<ProcessElement> r_createComputionTreeFromFragments(std::shared_ptr<OpFragment> fragment);
 
-    void r_printStep(RlaT_ProcessElement& current, int depth);
+    void r_printStep(ProcessElement& current, int depth);
 };
 
 } // namespace internal

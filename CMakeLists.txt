@@ -7,8 +7,8 @@ enable_testing()
 set(RlaT_Libary_Sources
     src/RlaT/RlaT_Script.h
     src/RlaT/RlaT_Script.cpp
-    src/RlaT/RlaT_Data.h
-    src/RlaT/RlaT_Data.cpp
+    src/RlaT/RlaT_TypedValue.h
+    src/RlaT/RlaT_TypedValue.cpp
     src/RlaT/RlaT_ProcessTree.h
     src/RlaT/RlaT_ProcessTree.cpp
     src/RlaT/RlaT_ProcessElement.h

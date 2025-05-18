@@ -4,7 +4,7 @@
 
 namespace RlaT {
 
-class RlaT_Script {
+class RlaTScript {
 public:
     void setOutputMethod(std::function<void(std::string)>);
     void setOutputErrorMethod(std::function<void(std::string)>);
