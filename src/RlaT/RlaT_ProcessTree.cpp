@@ -31,7 +31,7 @@ RlaT_ProcessTree::RlaT_ProcessTree(const std::string* tokens, const size_t token
     
     // Process the Line based on its type
     if(_mainElement->getType() == ProcessElementType::LITERAL || tokens[0][0] == '(') {
-        generateLiteralAST(tokens, tokenLength);
+        _mainElement = move(generateBinaryOperationAST(tokens, tokenLength));
     }
 
     // Check if the first element trows an error
@@ -41,11 +41,6 @@ RlaT_ProcessTree::RlaT_ProcessTree(const std::string* tokens, const size_t token
         rootScript->outputErrorString(ss.str());
         return;
     }
-
-    // Debug
-    stringstream ss;
-    ss << (int)_mainElement->getType();
-    this->rootScript->outputString(ss.str());
 
     printToConsole();
 }
@@ -64,7 +59,7 @@ void RlaT_ProcessTree::r_printStep(RlaT_ProcessElement& current, int depth) {
             ss << any_cast<RlaT_Data>(current.getValue()).toString();
             break;
         }
-        case ProcessElementType::OPERATION: {
+        case ProcessElementType::BINARYOPERATION: {
             ss << toString(any_cast<OperatorType>(current.getValue()));
             break;
         }
@@ -95,7 +90,7 @@ unique_ptr<RlaT_ProcessElement> RlaT_ProcessTree::createElementFromIndex(const s
 
     OperatorType operatorTypeCheckResult = isTokenAOperator(token);
     if(operatorTypeCheckResult != OperatorType::NONE) {
-        return make_unique<RlaT_ProcessElement>(ProcessElementType::OPERATION, operatorTypeCheckResult);
+        return make_unique<RlaT_ProcessElement>(ProcessElementType::BINARYOPERATION, operatorTypeCheckResult);
     }
 
     if(isTokenADatatype(token)) {
@@ -210,7 +205,7 @@ struct RlaT_ProcessTree::OpFragment {
     shared_ptr<RlaT_ProcessElement> leftLiteral;
     shared_ptr<RlaT_ProcessElement> rightLiteral;
     shared_ptr<OpFragment> leftFragment;
-    shared_ptr<OpFragment> rightFramgent;
+    shared_ptr<OpFragment> rightFragment;
 
     bool leftIsLiteral;
     bool rightIsLiteral;
@@ -222,7 +217,7 @@ struct RlaT_ProcessTree::OpFragment {
         shared_ptr<RlaT_ProcessElement> rL, shared_ptr<OpFragment> rF, bool rIL,
         shared_ptr<RlaT_ProcessElement> operatorElement, vector<pair<shared_ptr<OpFragment>, shared_ptr<OpFragment>>>& usesLog)
             : leftLiteral(move(lL)), leftFragment(lF), leftIsLiteral(lIL),
-              rightLiteral(move(rL)), rightFramgent(rF), rightIsLiteral(rIL),
+              rightLiteral(move(rL)), rightFragment(rF), rightIsLiteral(rIL),
               operatorElement(move(operatorElement)) { 
         
         // Go through the logs Array backwards. Check if the framgent is already used by any higher framgent, if it is the case,
@@ -230,7 +225,7 @@ struct RlaT_ProcessTree::OpFragment {
         // Repeat until no more used are found
 
         while (searchHigherFragmentAndReplace(leftFragment, usesLog)) ;
-        while (searchHigherFragmentAndReplace(rightFramgent, usesLog)) ;
+        while (searchHigherFragmentAndReplace(rightFragment, usesLog)) ;
     }
 
     // Returns true until nothing higher is found
@@ -239,8 +234,8 @@ struct RlaT_ProcessTree::OpFragment {
         if(usesLog.size() == 0) return false;
         
         for(size_t i = usesLog.size(); i-- > 0;) {
-            cout << usesLog.size() << " size\n";
-            cout << i << "INDEX \n";
+            /*cout << usesLog.size() << " size\n";
+            cout << i << "INDEX \n";*/
             if(usesLog[i].first.get() == original.get()) {
                 original = usesLog[i].second;
                 return true;
@@ -252,19 +247,20 @@ struct RlaT_ProcessTree::OpFragment {
 };
 
 // Generate the AST using the Shunting Yard Algorithm
-void RlaT_ProcessTree::generateLiteralAST(const std::string* tokens, const size_t tokenLength) {
+shared_ptr<RlaT_ProcessElement> RlaT_ProcessTree::generateBinaryOperationAST(const std::string* tokens, const size_t tokenLength) {
     std::vector<std::pair<std::shared_ptr<RlaT_ProcessElement>, int>> elementDepthMap = generateElementDepthMap(tokens, tokenLength);
 
+    /*
     // Debug
     for(size_t i = 0; i < elementDepthMap.size(); i++) {
         pair<std::shared_ptr<RlaT_ProcessElement>, int>& item = elementDepthMap[i];
         stringstream ss;
         if(item.first->getType() == ProcessElementType::LITERAL)
             ss << to_string(item.second) << " - " << toString(item.first->getType()) << " => " << any_cast<RlaT_Data>(item.first->getValue()).toString();
-        else if(item.first->getType() == ProcessElementType::OPERATION)
+        else if(item.first->getType() == ProcessElementType::BINARYOPERATION)
             ss << to_string(item.second) << " - " << toString(item.first->getType()) << " => " << toString(any_cast<OperatorType>(item.first->getValue()));
         std::cout << ss.str() << std::endl;
-    }
+    } */
 
     // Set constants and find the highest depth
     static const int highestPrio = 2;
@@ -274,7 +270,7 @@ void RlaT_ProcessTree::generateLiteralAST(const std::string* tokens, const size_
     }
     int operatorsCount = 0;
     for(size_t i = 0; i < elementDepthMap.size(); i++) {
-        if(elementDepthMap[i].first->getType() == ProcessElementType::OPERATION) operatorsCount++;
+        if(elementDepthMap[i].first->getType() == ProcessElementType::BINARYOPERATION) operatorsCount++;
     }
 
     // Create calculation blocks
@@ -303,14 +299,14 @@ void RlaT_ProcessTree::generateLiteralAST(const std::string* tokens, const size_
             for(size_t i = 0; i < elementDepthMap.size(); i++) {
                 // Check if in correct Depth
                 pair<std::shared_ptr<RlaT_ProcessElement>, int>& item = elementDepthMap[i];
-                if(item.first->getType() == ProcessElementType::OPERATION) currentOperatorNumber++;
+                if(item.first->getType() == ProcessElementType::BINARYOPERATION) currentOperatorNumber++;
                 if(item.second != currentDepth) continue;
 
                 // Note: Its not possible that a operator is at index 0
                 // Creating a block if the operator matches the current Prio
                 // If its a number its going to be skipped
-                if(item.first->getType() != ProcessElementType::OPERATION) continue;
-                int elementOperatorPrio = c_operatorPriorityMap.at(any_cast<OperatorType>(item.first->getValue()));
+                if(item.first->getType() != ProcessElementType::BINARYOPERATION) continue;
+                int elementOperatorPrio = c_operatorPriorityMap.at(any_cast<OperatorType>(item.first->getValue())); 
                 if(elementOperatorPrio != currentPrio) continue;
 
                 // Create the Fragment/Block -----------------------
@@ -329,9 +325,9 @@ void RlaT_ProcessTree::generateLiteralAST(const std::string* tokens, const size_
 
                 // Log fragment-uses if needed
                 if(isLeftAlreadyFragmented) fragmentUseLog.push_back(make_pair(fragmentArray[currentOperatorNumber]->leftFragment, fragmentArray[currentOperatorNumber]));
-                if(isRightAlreadyFragmented) fragmentUseLog.push_back(make_pair(fragmentArray[currentOperatorNumber]->rightFramgent, fragmentArray[currentOperatorNumber]));
+                if(isRightAlreadyFragmented) fragmentUseLog.push_back(make_pair(fragmentArray[currentOperatorNumber]->rightFragment, fragmentArray[currentOperatorNumber]));
 
-                cout << "Op: " << currentOperatorNumber << "\n";
+                // cout << "Op: " << currentOperatorNumber << "\n";
             }
             currentPrio--;
         }
@@ -341,17 +337,18 @@ void RlaT_ProcessTree::generateLiteralAST(const std::string* tokens, const size_
     // Inverting/Reversing the SortedFramgentArray
     std::reverse(sortedFragementArray.begin(), sortedFragementArray.end());
 
+    /*
     for(size_t i = 0; i < operatorsCount; i++) {
         cout << "Framgent " << i << ": " << sortedFragementArray[i]->leftIsLiteral << " " << toString(any_cast<OperatorType>(sortedFragementArray[i]->operatorElement->getValue())) << " " << sortedFragementArray[i]->rightIsLiteral << "\n";
-    }
+    }*/
 
     // Convert the first framgent
-    _mainElement = move(r_createComputionTreeFromFragments(sortedFragementArray[0]));
+    return r_createComputionTreeFromFragments(sortedFragementArray[0]);
 }
 shared_ptr<RlaT_ProcessElement> RlaT_ProcessTree::r_createComputionTreeFromFragments(shared_ptr<OpFragment> fragment) {
     shared_ptr<RlaT_ProcessElement> current = move(fragment->operatorElement);
     current->addChild((fragment->leftIsLiteral) ? fragment->leftLiteral : r_createComputionTreeFromFragments(fragment->leftFragment));
-    current->addChild((fragment->rightIsLiteral) ? fragment->rightLiteral : r_createComputionTreeFromFragments(fragment->rightFramgent));
+    current->addChild((fragment->rightIsLiteral) ? fragment->rightLiteral : r_createComputionTreeFromFragments(fragment->rightFragment));
 
     return current;
 }

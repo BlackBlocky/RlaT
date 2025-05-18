@@ -49,7 +49,7 @@ private:
     bool isTokenAVariable(std::string token);
 
     std::vector<std::pair<std::shared_ptr<RlaT_ProcessElement>, int>> generateElementDepthMap(const std::string* tokens, const size_t tokenLength);
-    void generateLiteralAST(const std::string* tokens, const size_t tokenLength);
+    std::shared_ptr<RlaT_ProcessElement> generateBinaryOperationAST(const std::string* tokens, const size_t tokenLength);
 
     struct OpFragment;
     std::shared_ptr<RlaT_ProcessElement> r_createComputionTreeFromFragments(std::shared_ptr<OpFragment> fragment);

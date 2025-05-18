@@ -11,8 +11,9 @@ namespace RlaT {
 
 
 void RlaT_Script::ping() {
-    outputString("Its worrrkssss!");
+    outputString("Stating ping!");
 
+    /*
     RlaT_Data var1 = RlaT_Data(DataType::INTEGER, 15);
     RlaT_Data var2 = RlaT_Data(DataType::INTEGER, 10);
 
@@ -21,7 +22,7 @@ void RlaT_Script::ping() {
         outputErrorString(result.toString());
     }
 
-    outputString(result.toString());
+    outputString(result.toString());*/
 
     std::string test[] = {"(", "(", "1", "+", "2", ")", ")", "+", "3"};
     RlaT_ProcessTree tree = RlaT_ProcessTree(test, 9 , this);
