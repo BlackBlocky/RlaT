@@ -28,17 +28,18 @@ RlaT_ProcessTree::RlaT_ProcessTree(const std::string* tokens, const size_t token
     // Create the element of the first token
     _mainElement = createElementFromIndex(tokens, 0);
 
+    
+    // Process the Line based on its type
+    if(_mainElement->getType() == ProcessElementType::LITERAL || tokens[0][0] == '(') {
+        generateLiteralAST(tokens, tokenLength);
+    }
+
     // Check if the first element trows an error
     if(_mainElement->getType() == ProcessElementType::ERROR) {
         stringstream ss;
         ss << tokens[0] << " is undefined";
         rootScript->outputErrorString(ss.str());
         return;
-    }
-    
-    // Process the Line based on its type
-    if(_mainElement->getType() == ProcessElementType::LITERAL) {
-        generateLiteralAST(tokens, tokenLength);
     }
 
     // Debug
@@ -211,6 +212,8 @@ struct RlaT_ProcessTree::OpFragment {
     shared_ptr<OpFragment> leftFragment;
     shared_ptr<OpFragment> rightFramgent;
 
+    shared_ptr<OpFragment> parentFragment;
+
     bool leftIsLiteral;
     bool rightIsLiteral;
 
@@ -222,7 +225,24 @@ struct RlaT_ProcessTree::OpFragment {
         shared_ptr<RlaT_ProcessElement> operatorElement)
             : leftLiteral(move(lL)), leftFragment(lF), leftIsLiteral(lIL),
               rightLiteral(move(rL)), rightFramgent(rF), rightIsLiteral(rIL),
-              operatorElement(move(operatorElement)) { }
+              operatorElement(move(operatorElement)) { 
+
+        // Move the linked Fragments to their highest parent, so that the correct blocks are actually used
+        // And also make sure that the parent is for both childs set
+        if(!leftIsLiteral) {
+            while(leftFragment->parentFragment != nullptr) leftFragment = leftFragment->parentFragment;
+
+            if(!leftFragment->leftIsLiteral && leftFragment->leftFragment->parentFragment == nullptr) leftFragment->leftFragment->parentFragment = leftFragment;
+            if(!leftFragment->rightIsLiteral && leftFragment->rightFramgent->parentFragment == nullptr) leftFragment->rightFramgent->parentFragment = leftFragment;
+        }
+        if(!rightIsLiteral) {
+            while(rightFramgent->parentFragment != nullptr) rightFramgent = rightFramgent->parentFragment;
+
+            if(!rightFramgent->leftIsLiteral && rightFramgent->leftFragment->parentFragment == nullptr) rightFramgent->leftFragment->parentFragment = rightFramgent;
+            if(!rightFramgent->rightIsLiteral && rightFramgent->rightFramgent->parentFragment == nullptr) rightFramgent->rightFramgent->parentFragment = rightFramgent;
+        }
+        
+    }
 };
 
 // Generate the AST using the Shunting Yard Algorithm
@@ -287,12 +307,17 @@ void RlaT_ProcessTree::generateLiteralAST(const std::string* tokens, const size_
                 bool isLeftAlreadyFragmented  = currentOperatorNumber != 0                   && fragmentArray[currentOperatorNumber - 1] != nullptr;
                 bool isRightAlreadyFragmented = currentOperatorNumber != operatorsCount - 1 && fragmentArray[currentOperatorNumber + 1] != nullptr;
 
+                // Note: The Constructor of the OpFragment will change automatically move up to the highest parent on the linked fragments
                 fragmentArray[currentOperatorNumber] = make_shared<OpFragment>(
                     (isLeftAlreadyFragmented) ? nullptr : elementDepthMap[i - 1].first, (isLeftAlreadyFragmented) ? fragmentArray[currentOperatorNumber - 1] : nullptr, !isLeftAlreadyFragmented,
                     (isRightAlreadyFragmented) ? nullptr : elementDepthMap[i + 1].first, (isRightAlreadyFragmented) ? fragmentArray[currentOperatorNumber + 1] : nullptr, !isRightAlreadyFragmented,
                     item.first
                 );
                 sortedFragementArray.push_back(fragmentArray[currentOperatorNumber]);
+
+                // Update parent on lower fragments if needed
+                if (isLeftAlreadyFragmented) fragmentArray[currentOperatorNumber - 1]->parentFragment = fragmentArray[currentOperatorNumber];
+                if (isRightAlreadyFragmented) fragmentArray[currentOperatorNumber + 1]->parentFragment = fragmentArray[currentOperatorNumber];
 
                 cout << "Op: " << currentOperatorNumber << "\n";
             }

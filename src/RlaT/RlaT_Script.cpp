@@ -25,6 +25,8 @@ void RlaT_Script::ping() {
 
     std::string test[] = {"1", "+", "(", "5", "*", "2", "+", "10", "*", "3", ")", "*", "2"};
     RlaT_ProcessTree tree = RlaT_ProcessTree(test, 13, this);
+
+    outputString("Done.");
     
 }
 
