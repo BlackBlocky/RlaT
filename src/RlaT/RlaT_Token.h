@@ -14,6 +14,7 @@ enum class TokenType {
     OPERATOR_MUL,  // *
     OPERATOR_DIV,  // /
     OPERATOR_SET,  // =
+    OPERATOR_DOT,  // .
 
     END_COMMAND,   // ;
 
@@ -22,8 +23,10 @@ enum class TokenType {
     LEFT_BRACE,    // {
     RIGHT_BRACE,   // }
     LEFT_BRACKET,  // [
-    RIGHT_BRACKET, // ]
-    
+    RIGHT_BRACKET, // ] 
+ 
+    COMMA,         // ,
+
     STRING,
     INTEGER
 };

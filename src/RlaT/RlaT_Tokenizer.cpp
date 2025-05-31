@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <unordered_set>
 #include <regex>
+#include <unordered_map>
 
 namespace RlaT {
 namespace internal {
@@ -76,29 +77,14 @@ std::string Tokenizer::removeFormattingExceptInStrings(const std::string& s) {
     return result;
 }
 
-Token Tokenizer::createToken(std::string content, int charNumber, int lineNumber) {
+Token Tokenizer::createToken(const std::string& content, int charNumber, int lineNumber) {
     return Token(content, Tokenizer::determineTokenType(content), lineNumber, charNumber);
 }
 
-TokenType Tokenizer::determineTokenType(std::string& s) {
+TokenType Tokenizer::determineTokenType(const std::string& s) {
     // Const check Values
     static const std::regex stringRegex("^\".*\"$");
     static const std::regex intRegex("^\\d*$");
-
-    static const std::regex opAddRegex("^\\+$");
-    static const std::regex opSubRegex("^-$");
-    static const std::regex opMulRegex("^\\*$");
-    static const std::regex opDivRegex("^/$");
-    static const std::regex opSetRegex("^=$");
-
-    static const std::regex opEndRegex("^;$");
-
-    static const std::regex leftParenRegex("^\\($");
-    static const std::regex rightParenRegex("^\\)$");
-    static const std::regex leftBraceRegex("^\\{$");
-    static const std::regex rightBraceRegex("^\\}$");
-    static const std::regex leftBracketRegex("^\\[$");
-    static const std::regex rightBracketRegex("^\\]$");
 
     static const std::regex identifierRegex("^[a-zA-Z_]+\\w*$");
 
@@ -106,22 +92,27 @@ TokenType Tokenizer::determineTokenType(std::string& s) {
         {stringRegex, TokenType::STRING},
         {intRegex, TokenType::INTEGER},
 
-        {opAddRegex, TokenType::OPERATOR_ADD},
-        {opSubRegex, TokenType::OPERATOR_SUB},
-        {opMulRegex, TokenType::OPERATOR_MUL},
-        {opDivRegex, TokenType::OPERATOR_DIV},
-
-        {opSetRegex, TokenType::OPERATOR_SET},
-        {opEndRegex, TokenType::END_COMMAND},
-
-        {leftParenRegex, TokenType::LEFT_PAREN},
-        {rightParenRegex, TokenType::RIGHT_PAREN},
-        {leftBraceRegex, TokenType::LEFT_BRACE},
-        {rightBraceRegex, TokenType::RIGHT_BRACE},
-        {leftBracketRegex, TokenType::LEFT_BRACKET},
-        {rightBracketRegex, TokenType::RIGHT_BRACKET},
-
         {identifierRegex, TokenType::IDENTIFIER}
+    };
+
+    static const std::unordered_map<char, TokenType> charToOperatorMap = {
+        {'+', TokenType::OPERATOR_ADD},
+        {'-', TokenType::OPERATOR_SUB},
+        {'*', TokenType::OPERATOR_MUL},
+        {'/', TokenType::OPERATOR_DIV},
+
+        {'=', TokenType::OPERATOR_SET},
+        {'.', TokenType::OPERATOR_DOT},
+        {';', TokenType::END_COMMAND},
+
+        {'(', TokenType::LEFT_PAREN},
+        {')', TokenType::RIGHT_PAREN},
+        {'{', TokenType::LEFT_BRACE},
+        {'}', TokenType::RIGHT_BRACE},
+        {'[', TokenType::LEFT_BRACKET},
+        {']', TokenType::RIGHT_BRACKET},
+
+        {',', TokenType::COMMA}
     };
 
     // Determine the Literal Type
@@ -130,6 +121,9 @@ TokenType Tokenizer::determineTokenType(std::string& s) {
             return c.second;
         }
     }
+
+    // Determine 1-char Tokens
+    if(charToOperatorMap.count(s[0])) return charToOperatorMap.at(s[0]);
 
     // No regex is matching
     return TokenType::INVALID;
