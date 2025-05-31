@@ -13,6 +13,10 @@ set(RlaT_Libary_Sources
     src/RlaT/RlaT_ProcessTree.cpp
     src/RlaT/RlaT_ProcessElement.h
     src/RlaT/RlaT_ProcessElement.cpp
+    src/RlaT/RlaT_Tokenizer.h
+    src/RlaT/RlaT_Tokenizer.cpp
+    src/RlaT/RlaT_Token.h
+    src/RlaT/RlaT_Token.cpp
 )
 add_library(rlatLibary STATIC ${RlaT_Libary_Sources})
 

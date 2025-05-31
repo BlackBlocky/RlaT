@@ -4,6 +4,7 @@
 #include "RlaT_TypedValue.h"
 #include <any>
 #include "RlaT_ProcessTree.h"
+#include "RlaT_Tokenizer.h"
 
 using namespace RlaT::internal;
 
@@ -28,7 +29,10 @@ void RlaTScript::ping() {
     ProcessTree tree = ProcessTree(test, 9 , this);
 
     outputString("Done.");
-    
+
+    std::string s = "(3 + 2) * 7 + 1;";
+    std::vector<Token> tokentest = Tokenizer::createTokensFromString(s, 1);
+    std::cout << "Done" << std::endl;
 }
 
 void RlaTScript::setOutputMethod(std::function<void(std::string)> func) {
