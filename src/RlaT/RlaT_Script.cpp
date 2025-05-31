@@ -30,7 +30,7 @@ void RlaTScript::ping() {
 
     outputString("Done.");
 
-    std::string s = "(3 + 2) * 7 + 1;";
+    std::string s = "\"Hello \"World\"\";";
     std::vector<Token> tokentest = Tokenizer::createTokensFromString(s, 1);
     std::cout << "Done" << std::endl;
 }

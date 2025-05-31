@@ -9,12 +9,8 @@ namespace internal {
 std::vector<Token> Tokenizer::createTokensFromString(const std::string& line, int lineNumber) {
     std::vector<Token> result;
     
-    // Make a copy of the sting and remove spaces and brackets, tabs etc. with std::isspace
-    std::string unformatedLine = line;
-    unformatedLine.erase(std::remove_if(unformatedLine.begin(), unformatedLine.end(), [](unsigned char c) {
-        return std::isspace(c);
-    }), 
-    unformatedLine.end());
+    // Make a copy of the sting and remove spaces and brackets, tabs etc. with std::isspace, while keeping them in strings
+    std::string unformatedLine = removeFormattingExceptInStrings(line);
 
     // Tokenize
     size_t currentCharIndex = 0;
@@ -51,6 +47,30 @@ std::vector<Token> Tokenizer::createTokensFromString(const std::string& line, in
 
         // Just move forward until we find a operator or something
         currentCharIndex++;
+    }
+
+    return result;
+}
+
+std::string Tokenizer::removeFormattingExceptInStrings(const std::string& s) {
+    std::string result;
+    bool insideString = false;
+
+    for(size_t i = 0; i < s.size(); i++) {
+        char c = s[i];
+        // Check if we hit a ", while keeping escape sequenzes in mind
+        if(c == '\"' && ((i == 0) || (i > 0 && s[i - 1] != '\\'))) insideString = !insideString;
+
+        // We are inside a String -> Keep Formatting
+        if(insideString) {
+            if(c == '\\') continue;
+            result += c;
+            continue;
+        }
+
+        // We are outside a String -> Remove Formatting
+        if(!std::isspace(static_cast<unsigned char>(c))) result += c;
+
     }
 
     return result;
