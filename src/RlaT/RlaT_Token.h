@@ -27,6 +27,9 @@ enum class TokenType {
  
     COMMA,         // ,
 
+    INCREMENT,     // ++ (Past-Processed)
+    DECREMENT,     // -- (Past-Processed)
+
     STRING,
     INTEGER
 };

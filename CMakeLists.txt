@@ -17,6 +17,8 @@ set(RlaT_Libary_Sources
     src/RlaT/RlaT_Tokenizer.cpp
     src/RlaT/RlaT_Token.h
     src/RlaT/RlaT_Token.cpp
+    src/RlaT/RlaT_TokenPastProcessor.h
+    src/RlaT/RlaT_TokenPastProcessor.cpp
 )
 add_library(rlatLibary STATIC ${RlaT_Libary_Sources})
 

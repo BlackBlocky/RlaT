@@ -5,6 +5,7 @@
 #include <any>
 #include "RlaT_ProcessTree.h"
 #include "RlaT_Tokenizer.h"
+#include "RlaT_TokenPastProcessor.h"
 
 using namespace RlaT::internal;
 
@@ -30,8 +31,9 @@ void RlaTScript::ping() {
 
     outputString("Done.");
 
-    std::string s = "print(23);";
+    std::string s = "--a--++;";
     std::vector<Token> tokentest = Tokenizer::createTokensFromString(s, 1);
+    TokenPastProcessor::processTokenVector(tokentest);
     std::cout << "Done" << std::endl;
 }
 
