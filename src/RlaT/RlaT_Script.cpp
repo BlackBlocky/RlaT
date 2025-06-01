@@ -30,7 +30,7 @@ void RlaTScript::ping() {
 
     outputString("Done.");
 
-    std::string s = "System.out.println(\"Hello World!\", 12);";
+    std::string s = "print(23);";
     std::vector<Token> tokentest = Tokenizer::createTokensFromString(s, 1);
     std::cout << "Done" << std::endl;
 }

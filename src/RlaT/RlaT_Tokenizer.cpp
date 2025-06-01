@@ -35,11 +35,12 @@ std::vector<Token> Tokenizer::createTokensFromString(const std::string& line, in
                     Tokenizer::createToken(unformatedLine.substr(currentTokenStart, currentCharIndex - currentTokenStart), currentTokenStart, lineNumber)
                 );
             }        
-            // Create one for the splitter
-            result.push_back(
-                Tokenizer::createToken(std::string(1, currentChar), currentCharIndex, lineNumber)
-            );
-            
+            // Create one for the splitter (Dont do it for Spaces)
+            if(currentChar != ' ') {
+                result.push_back(
+                    Tokenizer::createToken(std::string(1, currentChar), currentCharIndex, lineNumber)
+                );
+            }        
 
             currentCharIndex++;
             currentTokenStart = currentCharIndex;            
@@ -57,10 +58,15 @@ std::string Tokenizer::removeFormattingExceptInStrings(const std::string& s) {
     std::string result;
     bool insideString = false;
 
-    for(size_t i = 0; i < s.size(); i++) {
-        char c = s[i];
+    // Remove formatting in the line of code (!!Strings are current also effected)
+    std::string noTabsStrings = s;
+    std::replace(noTabsStrings.begin(), noTabsStrings.end(), '\t', ' ');
+    std::replace(noTabsStrings.begin(), noTabsStrings.end(), '\n', ' ');
+
+    for(size_t i = 0; i < noTabsStrings.size(); i++) {
+        char c = noTabsStrings[i];
         // Check if we hit a ", while keeping escape sequenzes in mind
-        if(c == '\"' && ((i == 0) || (i > 0 && s[i - 1] != '\\'))) insideString = !insideString;
+        if(c == '\"' && ((i == 0) || (i > 0 && noTabsStrings[i - 1] != '\\'))) insideString = !insideString;
 
         // We are inside a String -> Keep Formatting
         if(insideString) {
@@ -70,8 +76,9 @@ std::string Tokenizer::removeFormattingExceptInStrings(const std::string& s) {
         }
 
         // We are outside a String -> Remove Formatting
+        // If it is a Space, only remove it when there is already a Space left from it
         if(!std::isspace(static_cast<unsigned char>(c))) result += c;
-
+        else if(i != 0 && c == ' ' && !std::isspace(static_cast<unsigned char>(noTabsStrings[i-1]))) result += c;
     }
 
     return result;
