@@ -18,7 +18,7 @@ private:
     static Token createToken(const std::string& content, int charNumber, int lineNumber);
     static TokenType determineTokenType(const std::string& s);
 
-    inline static const std::unordered_set<char> SPLITTERS = {' ', '(', ')', '{', '}', '[', ']', ';', '=', '+', '-', '*', '/', '.', ','};
+    inline static const std::unordered_set<char> SPLITTERS = {' ', '(', ')', '{', '}', '[', ']', ';', '=', '+', '-', '*', '/', '.', ',', '!', '<', '>'};
 };
 
 }

@@ -31,7 +31,7 @@ void RlaTScript::ping() {
 
     outputString("Done.");
 
-    std::string s = "--a--++;";
+    std::string s = "a != b; a >= b; a <= b; a == b; a = b;";
     std::vector<Token> tokentest = Tokenizer::createTokensFromString(s, 1);
     TokenPastProcessor::processTokenVector(tokentest);
     std::cout << "Done" << std::endl;

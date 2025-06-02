@@ -11,9 +11,14 @@ struct TokenPastProcessor::MergeRule {
     TokenType result;
 };
 
-const std::array<TokenPastProcessor::MergeRule, 2> TokenPastProcessor::mergeRules {{
+const std::array<TokenPastProcessor::MergeRule, 6> TokenPastProcessor::mergeRules {{
     {TokenType::OPERATOR_ADD, TokenType::OPERATOR_ADD, TokenType::INCREMENT},
-    {TokenType::OPERATOR_SUB, TokenType::OPERATOR_SUB, TokenType::DECREMENT}
+    {TokenType::OPERATOR_SUB, TokenType::OPERATOR_SUB, TokenType::DECREMENT},
+
+    {TokenType::OPERATOR_SET, TokenType::OPERATOR_SET, TokenType::CMP_EQUALS},
+    {TokenType::OPERATOR_NOT, TokenType::OPERATOR_SET, TokenType::CMP_NOT_EQUALS},
+    {TokenType::CMP_GREATER,  TokenType::OPERATOR_SET, TokenType::CMP_GREATER_EQUALS},
+    {TokenType::CMP_LESS,     TokenType::OPERATOR_SET, TokenType::CMP_LESS_EQUALS}
 }};
 
 // This Function merges Tokens like '+' '+' together, or '-' '23', that the lexer missed.

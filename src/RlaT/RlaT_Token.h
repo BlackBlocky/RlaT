@@ -15,6 +15,7 @@ enum class TokenType {
     OPERATOR_DIV,  // /
     OPERATOR_SET,  // =
     OPERATOR_DOT,  // .
+    OPERATOR_NOT,  // !
 
     END_COMMAND,   // ;
 
@@ -29,6 +30,13 @@ enum class TokenType {
 
     INCREMENT,     // ++ (Past-Processed)
     DECREMENT,     // -- (Past-Processed)
+
+    CMP_EQUALS,         // ==
+    CMP_NOT_EQUALS,     // !=
+    CMP_GREATER,        // >
+    CMP_LESS,           // <
+    CMP_GREATER_EQUALS, // >=
+    CMP_LESS_EQUALS,    // <=
 
     STRING,
     INTEGER

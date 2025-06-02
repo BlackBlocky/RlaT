@@ -14,7 +14,7 @@ public:
 private:
     // This Map contains all possible merge combinations
     struct MergeRule;
-    static const std::array<MergeRule, 2> mergeRules;
+    static const std::array<MergeRule, 6> mergeRules;
 
     static const MergeRule* findMatchingRule(TokenType& a, TokenType& b);
 };

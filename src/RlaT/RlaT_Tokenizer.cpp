@@ -107,6 +107,7 @@ TokenType Tokenizer::determineTokenType(const std::string& s) {
         {'-', TokenType::OPERATOR_SUB},
         {'*', TokenType::OPERATOR_MUL},
         {'/', TokenType::OPERATOR_DIV},
+        {'!', TokenType::OPERATOR_NOT},
 
         {'=', TokenType::OPERATOR_SET},
         {'.', TokenType::OPERATOR_DOT},
@@ -119,7 +120,10 @@ TokenType Tokenizer::determineTokenType(const std::string& s) {
         {'[', TokenType::LEFT_BRACKET},
         {']', TokenType::RIGHT_BRACKET},
 
-        {',', TokenType::COMMA}
+        {',', TokenType::COMMA},
+
+        {'>', TokenType::CMP_GREATER},
+        {'<', TokenType::CMP_LESS}
     };
 
     // Determine the Literal Type
